@@ -14,6 +14,9 @@ module alu_8bit_tb();
     );
 
     initial begin
+        $dumpfile("alu_8bit.vcd");
+        $dumpvars(0, alu_8bit_tb);
+
         // ADD: 10 + 5 = 15
         A = 8'd10;
         B = 8'd5;
