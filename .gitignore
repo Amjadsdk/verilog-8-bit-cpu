@@ -1,0 +1,6 @@
+# Simulation outputs
+alu_test
+*.vcd
+
+# macOS files
+.DS_Store
