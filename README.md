@@ -19,6 +19,12 @@ This project is an 8-bit CPU built from scratch in Verilog.
 - Instruction set design
 - CPU top module
 
+## ALU Design
+
+The ALU takes two 8-bit inputs, `A` and `B`, and a 3-bit operation select signal, `op[2:0]`.
+
+![ALU Block Diagram](docs/images/alu_block_diagram.png)
+
 ## ALU Operations
 
 | op | Operation |
@@ -37,3 +43,10 @@ This project is an 8-bit CPU built from scratch in Verilog.
 ```bash
 iverilog -s alu_8bit_tb -o alu_test src/alu/alu_8bit.v tb/alu/alu_8bit_tb.v
 vvp alu_test
+```
+
+## Simulation
+
+The ALU was tested using an Icarus Verilog testbench. The testbench checks ADD, SUB, AND, OR, XOR, shift left, shift right, and equality comparison.
+
+![ALU Waveform](docs/images/alu_waveform.png)
