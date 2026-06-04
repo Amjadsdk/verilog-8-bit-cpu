@@ -1,5 +1,6 @@
 # Simulation outputs
 alu_test
+rf_test
 *.vcd
 
 # macOS files
