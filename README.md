@@ -58,6 +58,8 @@ The register file stores values used by the CPU datapath. It contains four 8-bit
 
 The register file has one write port and two read ports. This allows the CPU to write one value into a selected register while also reading two register values for ALU operations.
 
+![Register File Block Diagram](docs/images/register_file_block_diagram.png)
+
 ### Register File Signals
 
 | Signal | Width | Direction | Description |
