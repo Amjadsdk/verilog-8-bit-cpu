@@ -124,7 +124,7 @@ The register file was tested using an Icarus Verilog testbench. The testbench ch
 
 # Instruction Set Architecture
 
-See [`docs/isa.md`](docs/isa.md) for the current ISA, instruction formats, opcode map, and example encodings.
+See [`docs/isa.md`](docs/ISA.md) for the current ISA, instruction formats, opcode map, and example encodings.
 
 ## Decoder Fields
 
