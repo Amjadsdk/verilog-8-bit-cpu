@@ -195,6 +195,10 @@ destination register = R1
 | `1110` | `RA RB opcode`   | `ST RA, [RB]`   | `MEM[RB] = RA`                   |
 | `1111` | Control          | `NOP`           | Do nothing                       |
 
+## Instruction Decoder Block Diagram
+
+![Instruction Decoder Block Diagram](docs/images/instruction_decoder_diagram.png)
+
 ## Example Encodings
 
 ### ADD R1, R2

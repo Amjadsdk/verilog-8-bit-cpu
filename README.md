@@ -136,6 +136,10 @@ See [`docs/isa.md`](docs/ISA.md) for the current ISA, instruction formats, opcod
 | `Imm4`   | `[7:4]` | 4-bit immediate used for Imm4-format instructions |
 | `opcode` | `[3:0]` | 4-bit instruction opcode                          |
 
+## Instruction Decoder Block Diagram
+
+![Instruction Decoder Block Diagram](docs/images/instruction_decoder_diagram.png)
+
 ## Running the Instruction Decoder Testbench
 
 ```bash
