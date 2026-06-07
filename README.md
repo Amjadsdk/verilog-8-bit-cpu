@@ -21,11 +21,12 @@ This project is an 8-bit CPU built from scratch in Verilog.
 * Initial instruction set architecture
 * Instruction memory
 * Instruction memory testbench using Icarus Verilog
+* Program counter
+* Program counter testbench using Icarus Verilog
 
 ### In Progress
 
 * Control unit
-* Program counter
 * Data memory
 * CPU top module
 
@@ -223,11 +224,75 @@ The instruction memory was tested using an Icarus Verilog testbench. The testben
 
 ---
 
+# Program Counter Design
+
+The program counter stores the address of the current instruction. It provides the address used by instruction memory to fetch the next instruction.
+
+In the full CPU, the next PC value will be calculated externally by the datapath, usually using the ALU. This allows the CPU to support normal instruction sequencing and future branch behavior.
+
+Conceptually:
+
+```text
+Program Counter → Instruction Memory → Instruction Decoder
+```
+
+## Program Counter Signals
+
+| Signal    | Width | Direction | Description                           |
+| --------- | ----: | --------- | ------------------------------------- |
+| `clk`     | 1-bit | Input     | Clock signal                          |
+| `reset`   | 1-bit | Input     | Resets the PC to `0000`               |
+| `PCWrite` | 1-bit | Input     | Enables the PC to update              |
+| `nextPC`  | 4-bit | Input     | Next address value loaded into the PC |
+| `PC`      | 4-bit | Output    | Current instruction address           |
+
+## Program Counter Behavior
+
+On the rising edge of `clk`, the program counter behaves as follows:
+
+```text
+if reset = 1:
+    PC = 0000
+else if PCWrite = 1:
+    PC = nextPC
+else:
+    PC holds its current value
+```
+
+The PC does not calculate `PC + 1` internally. Instead, `nextPC` is calculated outside the PC module by the datapath/control logic. This keeps the PC simple and allows the same PC module to support normal instruction flow and branches later.
+
+For normal instruction sequencing:
+
+```text
+nextPC = PC + 1
+PCWrite = 1
+```
+
+For branch instructions, the datapath can later calculate:
+
+```text
+nextPC = PC + SE(Imm4)
+```
+
+## Running the Program Counter Testbench
+
+```bash
+iverilog -s program_counter_tb -o pc_test src/control_unit/program_counter.v tb/control_unit/program_counter_tb.v
+vvp pc_test
+```
+
+## Program Counter Simulation
+
+The program counter was tested using an Icarus Verilog testbench. The testbench checks that reset sets the PC to zero, `PCWrite` allows the PC to load `nextPC`, and the PC holds its value when `PCWrite` is disabled.
+
+![Program Counter Waveform](docs/images/program_counter_waveform.png)
+
+---
+
 # Next Steps
 
 Planned next modules:
 
-* Program counter
 * Data memory
 * Control FSM
 * CPU top module
