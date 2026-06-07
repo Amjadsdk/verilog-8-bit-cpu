@@ -15,15 +15,18 @@ This project is an 8-bit CPU built from scratch in Verilog.
 * ALU testbench using Icarus Verilog
 * 8-bit Register
 * Register File
+* Register file testbench using Icarus Verilog
 * Instruction decoder
+* Instruction decoder testbench using Icarus Verilog
 * Initial instruction set architecture
+* Instruction memory
+* Instruction memory testbench using Icarus Verilog
 
 ### In Progress
 
 * Control unit
-* Instruction set design
-* Instruction memory
 * Program counter
+* Data memory
 * CPU top module
 
 ---
@@ -124,7 +127,7 @@ The register file was tested using an Icarus Verilog testbench. The testbench ch
 
 # Instruction Set Architecture
 
-See [`docs/isa.md`](docs/ISA.md) for the current ISA, instruction formats, opcode map, and example encodings.
+See [`docs/ISA.md`](docs/ISA.md) for the current ISA, instruction formats, opcode map, and example encodings.
 
 ## Decoder Fields
 
@@ -155,21 +158,87 @@ The instruction decoder was tested using an Icarus Verilog testbench. The testbe
 
 ---
 
+# Instruction Memory Design
+
+The instruction memory stores the program instructions that the CPU will execute. It takes a 4-bit address as input and outputs the 8-bit instruction stored at that address.
+
+In the full CPU, the program counter will provide the address to instruction memory. The instruction memory will then output the instruction to the instruction decoder.
+
+Conceptually:
+
+```text
+Program Counter → Instruction Memory → Instruction Decoder
+```
+
+![Instruction Memory Block Diagram](docs/images/instruction_memory_block_diagram.png)
+
+## Instruction Memory Signals
+
+| Signal        | Width | Direction | Description                                |
+| ------------- | ----: | --------- | ------------------------------------------ |
+| `address`     | 4-bit | Input     | Selects one of 16 instruction locations    |
+| `instruction` | 8-bit | Output    | Instruction stored at the selected address |
+
+## Memory Organization
+
+The current instruction memory is organized as:
+
+```text
+16 instruction locations × 8 bits
+```
+
+Because the address input is 4 bits wide, the instruction memory can address 16 instruction locations.
+
+## Current Hardcoded Program
+
+The current instruction memory is hardcoded with a small test program.
+
+| Address | Instruction   | Binary     | Meaning                                          |
+| ------- | ------------- | ---------- | ------------------------------------------------ |
+| `0000`  | `LI R1, 3`    | `00111010` | Load the value `3` into `R1`                     |
+| `0001`  | `ADD R1, R2`  | `01100000` | `R1 = R1 + R2`                                   |
+| `0010`  | `ST R1, [R0]` | `01001110` | Store `R1` into memory at address stored in `R0` |
+| `0011`  | `NOP`         | `00001111` | Do nothing                                       |
+
+All other addresses currently output `NOP` by default.
+
+## Hardcoded ROM Design
+
+The instruction memory is currently implemented as a hardcoded ROM using a `case` statement. This makes the first version simple and easy to debug because the program is directly visible in the Verilog source file.
+
+Although the program is hardcoded for now, this is not the final plan. Later, the instruction memory will be changed so that programs can be loaded from an external program file instead of manually editing the Verilog module.
+
+A future version may use a `.mem` file so different programs can be tested more easily.
+
+## Running the Instruction Memory Testbench
+
+```bash
+iverilog -s instruction_memory_tb -o imem_test src/memory/instruction_memory.v tb/memory/instruction_memory_tb.v
+vvp imem_test
+```
+
+## Instruction Memory Simulation
+
+The instruction memory was tested using an Icarus Verilog testbench. The testbench checks that each programmed address returns the expected 8-bit instruction and that unprogrammed addresses return `NOP`.
+
+![Instruction Memory Waveform](docs/images/instruction_memory_waveform.png)
+
+---
+
 # Next Steps
 
 Planned next modules:
 
-* Instruction memory
 * Program counter
-* Control FSM
 * Data memory
+* Control FSM
 * CPU top module
 * Full CPU testbench
 
 The next major goal is to connect:
 
 ```text
-Instruction memory → instruction decoder → control unit → register file → ALU → writeback
+Program counter → instruction memory → instruction decoder → control unit → register file → ALU → writeback
 ```
 
 Once these blocks are connected, the CPU should be able to execute a small program using the defined 8-bit ISA.
