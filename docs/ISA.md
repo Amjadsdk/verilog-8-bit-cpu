@@ -197,7 +197,7 @@ destination register = R1
 
 ## Instruction Decoder Block Diagram
 
-![Instruction Decoder Block Diagram](docs/images/instruction_decoder_diagram.png)
+![Instruction Decoder Block Diagram](images/instruction_decoder_diagram.png)
 
 ## Example Encodings
 
