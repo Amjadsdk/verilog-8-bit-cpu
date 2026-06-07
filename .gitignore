@@ -2,6 +2,7 @@
 alu_test
 rf_test
 decoder_test
+imem_test
 *.vcd
 
 # macOS files
