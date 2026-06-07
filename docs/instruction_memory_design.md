@@ -150,7 +150,3 @@ vvp imem_test
 ## Current Status
 
 The instruction memory has been implemented as a simple hardcoded ROM and tested successfully using terminal-based simulation with Icarus Verilog.
-
-## Block Diagram
-
-![Instruction Memory Block Diagram](images/instruction_memory_block_diagram.png)

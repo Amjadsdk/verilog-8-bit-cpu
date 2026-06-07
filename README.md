@@ -170,8 +170,6 @@ Conceptually:
 Program Counter → Instruction Memory → Instruction Decoder
 ```
 
-![Instruction Memory Block Diagram](docs/images/instruction_memory_block_diagram.png)
-
 ## Instruction Memory Signals
 
 | Signal        | Width | Direction | Description                                |
