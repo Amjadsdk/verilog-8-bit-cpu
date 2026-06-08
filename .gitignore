@@ -4,6 +4,7 @@ rf_test
 decoder_test
 imem_test
 pc_test
+dmem_test
 *.vcd
 
 # macOS files
