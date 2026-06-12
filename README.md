@@ -28,8 +28,8 @@ This project is an 8-bit CPU built from scratch in Verilog.
 
 ### In Progress
 
-* Control unit
 * CPU top module
+* Full CPU integration
 
 ---
 
@@ -351,6 +351,48 @@ The data memory was tested using an Icarus Verilog testbench. The testbench chec
 
 ![Data Memory Waveform](docs/images/data_memory_waveform.png)
 
+# Control Unit FSM Design
+
+The control unit coordinates the CPU datapath by generating control signals for each instruction. It is implemented as a finite state machine, or FSM.
+
+The FSM breaks instruction execution into multiple stages:
+
+```text
+FETCH → DECODE → EXECUTE → MEMORY → WRITEBACK
+```
+
+Not every instruction uses every state. For example, ALU instructions use `FETCH`, `DECODE`, `EXECUTE`, and `WRITEBACK`, while store instructions use `FETCH`, `DECODE`, `EXECUTE`, and `MEMORY`.
+
+The full control unit design is documented here:
+
+[docs/control_unit_design.md](docs/control_unit_design.md)
+
+### Main Control Signals
+
+| Signal        | Description                                           |
+| ------------- | ----------------------------------------------------- |
+| `PCWrite`     | Enables the program counter to load the next PC value |
+| `RFWrite`     | Enables writing to the register file                  |
+| `MemRead`     | Enables reading from data memory                      |
+| `MemWrite`    | Enables writing to data memory                        |
+| `ALUop`       | Selects the ALU operation                             |
+| `ALUASel`     | Selects the first ALU input                           |
+| `ALUBSel`     | Selects the second ALU input                          |
+| `RegWriteSel` | Selects the register writeback value                  |
+| `PCSel`       | Selects the next PC source                            |
+
+## Running the Control Unit Testbench
+
+```bash
+iverilog -s control_unit_tb -o control_test src/control_unit/control_unit.v tb/control_unit/control_unit_tb.v
+vvp control_test
+```
+
+## Control Unit Simulation
+
+The control unit was tested using an Icarus Verilog testbench. The testbench verifies state transitions and control signals for `ADD`, `LD`, `ST`, `NOP`, and `BNZ`.
+
+![Control Unit Waveform](docs/images/control_unit_waveform.png)
 
 ---
 
@@ -358,14 +400,14 @@ The data memory was tested using an Icarus Verilog testbench. The testbench chec
 
 Planned next modules:
 
-* Control FSM
 * CPU top module
 * Full CPU testbench
+* Full datapath integration
 
-The next major goal is to connect:
+The next major goal is to connect the completed modules together:
 
 ```text
-Program counter → instruction memory → instruction decoder → control unit → register file → ALU → writeback
+Program counter → instruction memory → instruction decoder → control unit → register file → ALU → data memory/writeback
 ```
 
 Once these blocks are connected, the CPU should be able to execute a small program using the defined 8-bit ISA.
