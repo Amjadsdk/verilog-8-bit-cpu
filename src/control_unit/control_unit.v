@@ -12,7 +12,9 @@ module control_unit(
     output reg [1:0] ALUASel,
     output reg [1:0] ALUBSel,
     output reg [1:0] RegWriteSel,
-    output reg [1:0] PCSel
+    output reg [1:0] PCSel,
+
+    output     [2:0] currentStateOut
 );
 
     // Multiplexors:
@@ -461,4 +463,5 @@ module control_unit(
             end
         endcase
     end
+    assign currentStateOut = currentState;
 endmodule

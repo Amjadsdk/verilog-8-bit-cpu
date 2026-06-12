@@ -6,7 +6,7 @@ This document describes the control unit for the 8-bit CPU project.
 
 The control unit is responsible for coordinating the CPU datapath. It reads the instruction opcode and generates the control signals needed to move data through the program counter, instruction memory, register file, ALU, and data memory.
 
-The control unit will be implemented as a finite state machine (FSM). The FSM breaks instruction execution into steps such as fetch, decode, execute, memory access, and writeback.
+The control unit is implemented as a finite state machine (FSM). The FSM breaks instruction execution into steps such as fetch, decode, execute, memory access, and writeback.
 
 ## Purpose
 
@@ -28,12 +28,14 @@ The control unit connects these blocks into a working processor by generating si
 * `MemRead`
 * `MemWrite`
 * `ALUop`
-* ALU input select signals
-* Register writeback select signals
+* `ALUASel`
+* `ALUBSel`
+* `RegWriteSel`
+* `PCSel`
 
 ## FSM States
 
-The first version of the CPU will use a multi-cycle FSM.
+The first version of the CPU uses a multi-cycle FSM.
 
 | State       | Purpose                                                            |
 | ----------- | ------------------------------------------------------------------ |
@@ -43,7 +45,7 @@ The first version of the CPU will use a multi-cycle FSM.
 | `MEMORY`    | Access data memory for load/store instructions                     |
 | `WRITEBACK` | Write the final result back to the register file                   |
 
-Not every instruction needs every state. For example, a register-register ALU instruction may use `FETCH`, `DECODE`, `EXECUTE`, and `WRITEBACK`, while a store instruction may use `FETCH`, `DECODE`, `EXECUTE`, and `MEMORY`.
+Not every instruction needs every state. For example, a register-register ALU instruction uses `FETCH`, `DECODE`, `EXECUTE`, and `WRITEBACK`, while a store instruction uses `FETCH`, `DECODE`, `EXECUTE`, and `MEMORY`.
 
 ## Control Signals
 
@@ -54,27 +56,57 @@ Not every instruction needs every state. For example, a register-register ALU in
 | `MemRead`     | 1-bit | Enables reading from data memory                        |
 | `MemWrite`    | 1-bit | Enables writing to data memory                          |
 | `ALUop`       | 3-bit | Selects the ALU operation                               |
-| `ALUASel`     |   TBD | Selects the first ALU input                             |
-| `ALUBSel`     |   TBD | Selects the second ALU input                            |
-| `RegWriteSel` |   TBD | Selects what value is written back to the register file |
-| `PCSel`       |   TBD | Selects the next PC source or branch behavior           |
+| `ALUASel`     | 2-bit | Selects the first ALU input                             |
+| `ALUBSel`     | 2-bit | Selects the second ALU input                            |
+| `RegWriteSel` | 2-bit | Selects what value is written back to the register file |
+| `PCSel`       | 2-bit | Selects the next PC source                              |
 
-Some signal widths are marked as `TBD` because the exact mux options will be finalized when the full datapath is connected.
+## Mux Select Encoding
+
+### `ALUASel`
+
+| Value | Meaning         |
+| ----- | --------------- |
+| `00`  | Register A      |
+| `01`  | Program counter |
+
+### `ALUBSel`
+
+| Value | Meaning         |
+| ----- | --------------- |
+| `00`  | Register B      |
+| `01`  | Immediate value |
+| `10`  | Constant 1      |
+
+### `RegWriteSel`
+
+| Value | Meaning            |
+| ----- | ------------------ |
+| `00`  | ALU result         |
+| `01`  | Data memory output |
+| `10`  | Immediate value    |
+
+### `PCSel`
+
+| Value | Meaning       |
+| ----- | ------------- |
+| `00`  | `PC + 1`      |
+| `01`  | Branch target |
 
 ## ALU Operation Mapping
 
 The control unit converts instruction opcodes into ALU operation select signals.
 
-| Instruction | Opcode | ALUop | ALU Operation       |
-| ----------- | ------ | ----- | ------------------- |
-| `ADD`       | `0000` | `000` | Addition            |
-| `SUB`       | `0001` | `001` | Subtraction         |
-| `AND`       | `0010` | `010` | Bitwise AND         |
-| `OR`        | `0011` | `011` | Bitwise OR          |
-| `XOR`       | `0100` | `100` | Bitwise XOR         |
-| `SL`        | `0101` | `101` | Shift left          |
-| `SR`        | `0110` | `110` | Shift right         |
-| `EQ`        | `1000` | `111` | Equality comparison |
+| Instruction | Opcode | `ALUop` | ALU Operation       |
+| ----------- | ------ | ------- | ------------------- |
+| `ADD`       | `0000` | `000`   | Addition            |
+| `SUB`       | `0001` | `001`   | Subtraction         |
+| `AND`       | `0010` | `010`   | Bitwise AND         |
+| `OR`        | `0011` | `011`   | Bitwise OR          |
+| `XOR`       | `0100` | `100`   | Bitwise XOR         |
+| `SL`        | `0101` | `101`   | Shift left          |
+| `SR`        | `0110` | `110`   | Shift right         |
+| `EQ`        | `1000` | `111`   | Equality comparison |
 
 The instruction opcode is 4 bits, but the ALU operation select signal is 3 bits. The control unit translates the instruction opcode into the correct `ALUop`.
 
@@ -120,24 +152,24 @@ FETCH → DECODE → EXECUTE → WRITEBACK
 
 Behavior:
 
-| State       | Behavior                                          |
-| ----------- | ------------------------------------------------- |
-| `FETCH`     | Fetch instruction from instruction memory         |
-| `DECODE`    | Decode `RA`, `RB`, and opcode                     |
-| `EXECUTE`   | ALU performs operation using `RA` and `RB` values |
-| `WRITEBACK` | Register file writes ALU result back to `RA`      |
+| State       | Behavior                                                |
+| ----------- | ------------------------------------------------------- |
+| `FETCH`     | Fetch instruction from instruction memory and update PC |
+| `DECODE`    | Decode `RA`, `RB`, and opcode                           |
+| `EXECUTE`   | ALU performs operation using `RA` and `RB` values       |
+| `WRITEBACK` | Register file writes ALU result back to `RA`            |
 
 Control signal summary:
 
-| Signal     | Value                              |
-| ---------- | ---------------------------------- |
-| `RFWrite`  | `1` during `WRITEBACK`             |
-| `MemRead`  | `0`                                |
-| `MemWrite` | `0`                                |
-| `ALUop`    | Based on opcode                    |
-| `PCWrite`  | Used during instruction sequencing |
+| Signal        | Value                  |
+| ------------- | ---------------------- |
+| `RFWrite`     | `1` during `WRITEBACK` |
+| `MemRead`     | `0`                    |
+| `MemWrite`    | `0`                    |
+| `ALUop`       | Based on opcode        |
+| `RegWriteSel` | `00`, ALU result       |
 
-### Shift Instructions
+## Shift Instructions
 
 Instructions:
 
@@ -161,16 +193,27 @@ FETCH → DECODE → EXECUTE → WRITEBACK
 
 Behavior:
 
-| State       | Behavior                                       |
-| ----------- | ---------------------------------------------- |
-| `FETCH`     | Fetch instruction                              |
-| `DECODE`    | Decode `RA`, `Imm2`, and opcode                |
-| `EXECUTE`   | ALU shifts `RA` by `Imm2`                      |
-| `WRITEBACK` | Register file writes shift result back to `RA` |
+| State       | Behavior                                                |
+| ----------- | ------------------------------------------------------- |
+| `FETCH`     | Fetch instruction from instruction memory and update PC |
+| `DECODE`    | Decode `RA`, `Imm2`, and opcode                         |
+| `EXECUTE`   | ALU shifts `RA` by `Imm2`                               |
+| `WRITEBACK` | Register file writes shift result back to `RA`          |
 
-Note: The current ALU may need to be updated later to support variable shift amounts using `Imm2`.
+Control signal summary:
 
-### Immediate Instructions
+| Signal        | Value                  |
+| ------------- | ---------------------- |
+| `RFWrite`     | `1` during `WRITEBACK` |
+| `MemRead`     | `0`                    |
+| `MemWrite`    | `0`                    |
+| `ALUASel`     | `00`, register A       |
+| `ALUBSel`     | `01`, immediate        |
+| `RegWriteSel` | `00`, ALU result       |
+
+Note: The current ALU may need to be updated later to fully support variable shift amounts using `Imm2`.
+
+## Immediate Instructions
 
 Instructions:
 
@@ -196,14 +239,12 @@ Behavior:
 
 Control signal summary:
 
-| Signal     | Value                                                   |
-| ---------- | ------------------------------------------------------- |
-| `RFWrite`  | `1` during `WRITEBACK`                                  |
-| `MemRead`  | `0`                                                     |
-| `MemWrite` | `0`                                                     |
-| `ALUop`    | ADD for `ADDI`; pass/select immediate for `LI` behavior |
+| Instruction | Important Control Behavior               |
+| ----------- | ---------------------------------------- |
+| `ADDI`      | Uses ALU add, then writes ALU result     |
+| `LI`        | Selects immediate value during writeback |
 
-### Branch Instructions
+## Branch Instructions
 
 Instructions:
 
@@ -227,11 +268,11 @@ FETCH → DECODE → EXECUTE
 
 Behavior:
 
-| State     | Behavior                              |
-| --------- | ------------------------------------- |
-| `FETCH`   | Fetch branch instruction              |
-| `DECODE`  | Decode opcode and `Imm4`              |
-| `EXECUTE` | Check condition and calculate next PC |
+| State     | Behavior                                    |
+| --------- | ------------------------------------------- |
+| `FETCH`   | Fetch branch instruction and update PC      |
+| `DECODE`  | Decode opcode and `Imm4`                    |
+| `EXECUTE` | Check condition and calculate branch target |
 
 Branch conditions:
 
@@ -246,9 +287,11 @@ The branch target is calculated using the ALU:
 nextPC = PC + SE(Imm4)
 ```
 
-If the branch is not taken, the CPU continues with the next sequential instruction.
+If the branch condition is true, `PCWrite` is enabled during `EXECUTE`.
 
-### Load Instruction
+If the branch condition is false, the CPU continues with the next sequential instruction.
+
+## Load Instruction
 
 Instruction:
 
@@ -270,24 +313,24 @@ FETCH → DECODE → EXECUTE → MEMORY → WRITEBACK
 
 Behavior:
 
-| State       | Behavior                        |
-| ----------- | ------------------------------- |
-| `FETCH`     | Fetch instruction               |
-| `DECODE`    | Decode `RA`, `RB`, and opcode   |
-| `EXECUTE`   | Use `RB[3:0]` as memory address |
-| `MEMORY`    | Read from data memory           |
-| `WRITEBACK` | Write memory output into `RA`   |
+| State       | Behavior                                                |
+| ----------- | ------------------------------------------------------- |
+| `FETCH`     | Fetch instruction from instruction memory and update PC |
+| `DECODE`    | Decode `RA`, `RB`, and opcode                           |
+| `EXECUTE`   | Use `RB[3:0]` as memory address                         |
+| `MEMORY`    | Read from data memory                                   |
+| `WRITEBACK` | Write memory output into `RA`                           |
 
 Control signal summary:
 
-| Signal        | Value                     |
-| ------------- | ------------------------- |
-| `MemRead`     | `1` during `MEMORY`       |
-| `MemWrite`    | `0`                       |
-| `RFWrite`     | `1` during `WRITEBACK`    |
-| `RegWriteSel` | Select data memory output |
+| Signal        | Value                    |
+| ------------- | ------------------------ |
+| `MemRead`     | `1` during `MEMORY`      |
+| `MemWrite`    | `0`                      |
+| `RFWrite`     | `1` during `WRITEBACK`   |
+| `RegWriteSel` | `01`, data memory output |
 
-### Store Instruction
+## Store Instruction
 
 Instruction:
 
@@ -309,12 +352,12 @@ FETCH → DECODE → EXECUTE → MEMORY
 
 Behavior:
 
-| State     | Behavior                          |
-| --------- | --------------------------------- |
-| `FETCH`   | Fetch instruction                 |
-| `DECODE`  | Decode `RA`, `RB`, and opcode     |
-| `EXECUTE` | Use `RB[3:0]` as memory address   |
-| `MEMORY`  | Write `RA` value into data memory |
+| State     | Behavior                                                |
+| --------- | ------------------------------------------------------- |
+| `FETCH`   | Fetch instruction from instruction memory and update PC |
+| `DECODE`  | Decode `RA`, `RB`, and opcode                           |
+| `EXECUTE` | Use `RB[3:0]` as memory address                         |
+| `MEMORY`  | Write `RA` value into data memory                       |
 
 Control signal summary:
 
@@ -324,7 +367,7 @@ Control signal summary:
 | `MemWrite` | `1` during `MEMORY` |
 | `RFWrite`  | `0`                 |
 
-### NOP Instruction
+## NOP Instruction
 
 Instruction:
 
@@ -374,7 +417,7 @@ nextPC = PC + SE(Imm4)
 PCWrite = 1 if branch condition is true
 ```
 
-## Preliminary State Transitions
+## State Transitions
 
 The general FSM flow is:
 
@@ -394,26 +437,60 @@ After `EXECUTE`, the next state depends on the instruction type.
 | Store            | `FETCH → DECODE → EXECUTE → MEMORY → FETCH`             |
 | NOP              | `FETCH → DECODE → FETCH`                                |
 
-## Verification Plan
+## Verification
 
-The control unit should be tested using an Icarus Verilog testbench.
+The control unit was tested using an Icarus Verilog testbench.
 
-The testbench should verify:
+The testbench verifies:
 
-* Correct state transitions
-* Correct control signals for ALU instructions
-* Correct control signals for shift instructions
-* Correct control signals for immediate instructions
-* Correct control signals for branch instructions
-* Correct control signals for load and store instructions
-* Correct behavior for `NOP`
+* The FSM starts in `FETCH` after reset
+* `ADD` follows the correct state sequence:
 
-The first testbench version should focus on checking that each opcode generates the expected control signals and state transitions.
+```text
+FETCH → DECODE → EXECUTE → WRITEBACK → FETCH
+```
+
+* `LD` follows the correct state sequence:
+
+```text
+FETCH → DECODE → EXECUTE → MEMORY → WRITEBACK → FETCH
+```
+
+* `ST` follows the correct state sequence:
+
+```text
+FETCH → DECODE → EXECUTE → MEMORY → FETCH
+```
+
+* `NOP` follows the correct state sequence:
+
+```text
+FETCH → DECODE → FETCH
+```
+
+* `BNZ` sets `PCWrite` when the branch condition is true
+* `BNZ` keeps `PCWrite` off when the branch condition is false
+* `RFWrite`, `MemRead`, `MemWrite`, `ALUop`, `RegWriteSel`, and `PCSel` are asserted during the expected states
+
+## Running the Control Unit Testbench
+
+```bash
+iverilog -s control_unit_tb -o control_test src/control_unit/control_unit.v tb/control_unit/control_unit_tb.v
+vvp control_test
+```
 
 ## Current Status
 
-The control unit has not been implemented yet. This document defines the planned FSM structure and control behavior before Verilog implementation begins.
+The control unit has been implemented and tested successfully using terminal-based simulation with Icarus Verilog.
 
-## Block Diagram
+The current version includes:
 
-![Control Unit Block Diagram](images/control_unit_block_diagram.png)
+* FSM state register
+* Next-state logic
+* Output/control signal logic
+* Support for ALU instructions
+* Support for load and store instructions
+* Support for `NOP`
+* Initial branch control behavior for `BNZ`
+
+The control unit is now ready to be connected to the rest of the CPU datapath.
