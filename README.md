@@ -23,11 +23,12 @@ This project is an 8-bit CPU built from scratch in Verilog.
 * Instruction memory testbench using Icarus Verilog
 * Program counter
 * Program counter testbench using Icarus Verilog
+* Data memory
+* Data memory testbench using Icarus Verilog
 
 ### In Progress
 
 * Control unit
-* Data memory
 * CPU top module
 
 ---
@@ -287,13 +288,76 @@ The program counter was tested using an Icarus Verilog testbench. The testbench 
 
 ![Program Counter Waveform](docs/images/program_counter_waveform.png)
 
+# Data Memory Design
+
+The data memory stores values used by the CPU during program execution. It is separate from instruction memory: instruction memory stores the program instructions, while data memory stores values used by `LD` and `ST` instructions.
+
+The data memory has a 4-bit address input, an 8-bit data input, and an 8-bit data output.
+
+![Data Memory Block Diagram](docs/images/data_memory_block_diagram.png)
+
+### Data Memory Signals
+
+| Signal     | Width | Direction | Description                        |
+| ---------- | ----: | --------- | ---------------------------------- |
+| `clk`      | 1-bit | Input     | Clock signal                       |
+| `MemRead`  | 1-bit | Input     | Enables reading from memory        |
+| `MemWrite` | 1-bit | Input     | Enables writing to memory          |
+| `address`  | 4-bit | Input     | Selects one of 16 memory locations |
+| `dataIn`   | 8-bit | Input     | Value written into memory          |
+| `dataOut`  | 8-bit | Output    | Value read from memory             |
+
+### Memory Organization
+
+The data memory is organized as:
+
+```text
+16 memory locations × 8 bits
+```
+
+The 4-bit address allows access to 16 memory locations.
+
+### Read and Write Behavior
+
+Writing happens on the rising edge of `clk` when `MemWrite` is high.
+
+Reading is combinational. When `MemRead` is high, `dataOut` shows the value stored at the selected address. When `MemRead` is low, `dataOut` outputs zero.
+
+### ISA Connection
+
+The data memory is used by the load and store instructions:
+
+| Instruction   | Meaning        |
+| ------------- | -------------- |
+| `LD RA, [RB]` | `RA = MEM[RB]` |
+| `ST RA, [RB]` | `MEM[RB] = RA` |
+
+Since the register file outputs 8-bit values and data memory uses a 4-bit address, the CPU datapath can use the lower 4 bits of the address register value:
+
+```text
+address = RB[3:0]
+```
+
+## Running the Data Memory Testbench
+
+```bash
+iverilog -s data_memory_tb -o dmem_test src/memory/data_memory.v tb/memory/data_memory_tb.v
+vvp dmem_test
+```
+
+## Data Memory Simulation
+
+The data memory was tested using an Icarus Verilog testbench. The testbench checks that values can be written to memory, read back correctly, and that `dataOut` outputs zero when `MemRead` is disabled.
+
+![Data Memory Waveform](docs/images/data_memory_waveform.png)
+
+
 ---
 
 # Next Steps
 
 Planned next modules:
 
-* Data memory
 * Control FSM
 * CPU top module
 * Full CPU testbench
