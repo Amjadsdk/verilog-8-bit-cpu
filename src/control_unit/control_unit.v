@@ -285,5 +285,180 @@ module control_unit(
     end
 
     // Output Logic
+    always @(*) begin
+        // Default values
+        PCWrite = 0;
+        RFWrite = 0;
+        MemRead = 0;
+        MemWrite = 0;
+        ALUop = 3'b000;
+        ALUASel = 2'b00;
+        ALUBSel = 2'b00;
+        RegWriteSel = 2'b00;
+        PCSel = 2'b00;
 
+        case(currentState)
+            FETCH: begin
+                PCWrite = 1;
+                PCSel = 2'b00;       // nextPC = PC + 1
+                ALUASel = 2'b01;     // ALU input A = PC
+                ALUBSel = 2'b10;     // ALU input B = constant 1
+                ALUop = 3'b000;      // ADD
+            end
+
+            DECODE: begin
+                // no writes happen yet
+            end
+
+            EXECUTE: begin
+                case(opcode)
+                    4'b0000: begin // ADD
+                        ALUop = 3'b000;
+                        ALUASel = 2'b00; // register A
+                        ALUBSel = 2'b00; // register B
+                    end
+
+                    4'b0001: begin // SUB
+                        ALUop = 3'b001;
+                        ALUASel = 2'b00;
+                        ALUBSel = 2'b00;
+                    end
+
+                    4'b0010: begin // AND
+                        ALUop = 3'b010;
+                        ALUASel = 2'b00;
+                        ALUBSel = 2'b00;
+                    end
+
+                    4'b0011: begin // OR
+                        ALUop = 3'b011;
+                        ALUASel = 2'b00;
+                        ALUBSel = 2'b00;
+                    end
+
+                    4'b0100: begin // XOR
+                        ALUop = 3'b100;
+                        ALUASel = 2'b00;
+                        ALUBSel = 2'b00;
+                    end
+
+                    4'b0101: begin // SL
+                        ALUop = 3'b101;
+                        ALUASel = 2'b00; // register A
+                        ALUBSel = 2'b01; // immediate
+                    end
+
+                    4'b0110: begin // SR
+                        ALUop = 3'b110;
+                        ALUASel = 2'b00;
+                        ALUBSel = 2'b01;
+                    end
+
+                    4'b1000: begin // EQ
+                        ALUop = 3'b111;
+                        ALUASel = 2'b00;
+                        ALUBSel = 2'b00;
+                    end
+
+                    4'b1001: begin // ADDI
+                        ALUop = 3'b000;  // ADD
+                        ALUASel = 2'b00; // register A / R1 later in datapath
+                        ALUBSel = 2'b01; // immediate
+                    end
+
+                    4'b1010: begin // LI
+                        // LI does not really need the ALU in this first design.
+                        // Writeback will select the immediate value.
+                        ALUBSel = 2'b01; // immediate
+                    end
+
+                    4'b1011: begin // BNZ
+                        ALUop = 3'b000;  // ADD for PC + immediate
+                        ALUASel = 2'b01; // PC
+                        ALUBSel = 2'b01; // immediate
+                        PCSel = 2'b01;   // branch target
+
+                        if (Z == 0)
+                            PCWrite = 1;
+                    end
+
+                    4'b1100: begin // BPZ
+                        ALUop = 3'b000;  // ADD for PC + immediate
+                        ALUASel = 2'b01; // PC
+                        ALUBSel = 2'b01; // immediate
+                        PCSel = 2'b01;   // branch target
+
+                        if (N == 0)
+                            PCWrite = 1;
+                    end
+
+                    4'b1101: begin // LD
+                        // Address comes from RB later in datapath.
+                        // Actual memory read happens in MEMORY state.
+                    end
+
+                    4'b1110: begin // ST
+                        // Address comes from RB later in datapath.
+                        // Actual memory write happens in MEMORY state.
+                    end
+
+                    4'b1111: begin // NOP
+                        // Do nothing
+                    end
+
+                    default: begin
+                        // Keep default values
+                    end
+                endcase
+            end
+
+            MEMORY: begin
+                case(opcode)
+                    4'b1101: begin // LD
+                        MemRead = 1;
+                    end
+
+                    4'b1110: begin // ST
+                        MemWrite = 1;
+                    end
+
+                    default: begin
+                        // Keep default values
+                    end
+                endcase
+            end
+
+            WRITEBACK: begin
+                case(opcode)
+                    // ALU result writeback
+                    4'b0000, // ADD
+                    4'b0001, // SUB
+                    4'b0010, // AND
+                    4'b0011, // OR
+                    4'b0100, // XOR
+                    4'b0101, // SL
+                    4'b0110, // SR
+                    4'b1000, // EQ
+                    4'b1001: begin // ADDI
+                        RFWrite = 1;
+                        RegWriteSel = 2'b00; // ALU result
+                    end
+
+                    4'b1010: begin // LI
+                        RFWrite = 1;
+                        RegWriteSel = 2'b10; // immediate
+                    end
+
+                    4'b1101: begin // LD
+                        RFWrite = 1;
+                        RegWriteSel = 2'b01; // data memory output
+                    end
+
+                    default: begin
+                        // No writeback
+                    end
+                endcase
+            end
+        endcase
+    end
 endmodule
