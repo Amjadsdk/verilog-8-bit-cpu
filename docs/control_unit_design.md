@@ -413,3 +413,7 @@ The first testbench version should focus on checking that each opcode generates 
 ## Current Status
 
 The control unit has not been implemented yet. This document defines the planned FSM structure and control behavior before Verilog implementation begins.
+
+## Block Diagram
+
+![Control Unit Block Diagram](images/control_unit_block_diagram.png)
