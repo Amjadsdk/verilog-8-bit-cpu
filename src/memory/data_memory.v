@@ -8,6 +8,7 @@ module data_memory (
 );
 
     // First always block writes to memory (therefore only runs on clock edge)
+    // Single ported RAM
 
     reg [7:0] memory [0:15];
     always @(posedge clk) begin
