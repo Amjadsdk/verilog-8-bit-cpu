@@ -5,6 +5,11 @@ module register_8bit(
     input clk
 ); 
     reg     [7:0] res;
+
+    initial begin
+        res = 8'b00000000;
+    end
+
     always@(posedge clk)
     begin
         if(enable) begin
