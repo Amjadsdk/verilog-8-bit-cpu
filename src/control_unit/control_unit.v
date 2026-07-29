@@ -278,6 +278,7 @@ module control_unit(
 
                     // LD writes memory output
                     4'b1101: begin
+                        MemRead = 1;
                         RFWrite = 1;
                         RegWriteSel = 2'b01; // data memory output
                     end

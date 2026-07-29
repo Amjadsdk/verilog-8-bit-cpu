@@ -11,7 +11,15 @@ module cpu_top (
     output [7:0] debug_dataB,
     output [7:0] debug_aluResult,
     output debug_RFWrite,
-    output [1:0] debug_RegWriteSel
+    output [1:0] debug_RegWriteSel,
+    output debug_MemRead,
+    output debug_MemWrite,
+    output [3:0] debug_dataMemAddress,
+    output [7:0] debug_dataMemOut,
+    output [7:0] debug_R0,
+    output [7:0] debug_R1,
+    output [7:0] debug_R2,
+    output [7:0] debug_R3
 );
 
     // Program counter wires
@@ -51,6 +59,12 @@ module cpu_top (
     wire [7:0] aluResult;
     wire aluCarryOut;
 
+    // Data memory wires
+    wire [3:0] dataMemAddress;
+    wire [7:0] dataMemOut;
+
+    assign dataMemAddress = dataB[3:0];
+
     // Writeback MUX logic
     wire [7:0] imm4SignExt;
     wire [7:0] imm2ZeroExt;
@@ -76,8 +90,9 @@ module cpu_top (
 
     // Register writeback selection
     assign dataW = (RegWriteSel == 2'b00) ? aluResult :
-                (RegWriteSel == 2'b10) ? imm4SignExt :
-                8'b00000000;
+               (RegWriteSel == 2'b01) ? dataMemOut :
+               (RegWriteSel == 2'b10) ? imm4SignExt :
+               8'b00000000;
 
     // Register destination selection
     assign regW = (opcode == 4'b1001 || opcode == 4'b1010) ? 2'b01 : RA;
@@ -100,6 +115,15 @@ module cpu_top (
         .PCWrite(PCWrite),
         .nextPC(nextPC),
         .PC(PC)
+    );
+
+    data_memory dmem_inst (
+        .clk(clk),
+        .MemRead(MemRead),
+        .MemWrite(MemWrite),
+        .address(dataMemAddress),
+        .dataIn(dataA),
+        .dataOut(dataMemOut)
     );
 
     alu_8bit alu_inst (
@@ -132,7 +156,11 @@ module cpu_top (
         .writeEnable(RFWrite),
         .clk(clk),
         .dataA(dataA),
-        .dataB(dataB)
+        .dataB(dataB),
+        .debug_R0(debug_R0),
+        .debug_R1(debug_R1),
+        .debug_R2(debug_R2),
+        .debug_R3(debug_R3)
     );
 
     control_unit control_inst (
@@ -165,5 +193,10 @@ module cpu_top (
     assign debug_aluResult = aluResult;
     assign debug_RFWrite = RFWrite;
     assign debug_RegWriteSel = RegWriteSel;
+
+    assign debug_MemRead = MemRead;
+    assign debug_MemWrite = MemWrite;
+    assign debug_dataMemAddress = dataMemAddress;
+    assign debug_dataMemOut = dataMemOut;
 
 endmodule

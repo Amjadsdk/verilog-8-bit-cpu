@@ -6,7 +6,11 @@ module register_file(
     input writeEnable,
     input clk,
     output  [7:0] dataA,
-    output  [7:0] dataB
+    output  [7:0] dataB,
+    output [7:0] debug_R0,
+    output [7:0] debug_R1,
+    output [7:0] debug_R2,
+    output [7:0] debug_R3
 ); 
 
     wire [7:0] q0;
@@ -82,5 +86,10 @@ module register_file(
     end
 
     assign dataB = resB;
+
+    assign debug_R0 = q0;
+    assign debug_R1 = q1;
+    assign debug_R2 = q2;
+    assign debug_R3 = q3;
 
 endmodule

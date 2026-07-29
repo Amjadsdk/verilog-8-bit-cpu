@@ -11,11 +11,12 @@ module instruction_memory (
 
     always @(*) begin
         case(address)
-            4'b0000: instruction = 8'b00111010;
-            4'b0001: instruction = 8'b01100000;
-            4'b0010: instruction = 8'b01001110;
-            4'b0011: instruction = 8'b00001111;
-            default: instruction = 8'b00001111;
+            4'b0000: instruction = 8'b00111010; // LI R1, 3
+            4'b0001: instruction = 8'b01100000; // ADD R1, R2
+            4'b0010: instruction = 8'b01001110; // ST R1, [R0]
+            4'b0011: instruction = 8'b10001101; // LD R2, [R0]
+            4'b0100: instruction = 8'b00001111; // NOP
+            default: instruction = 8'b00001111; // NOP
         endcase
     end
 
